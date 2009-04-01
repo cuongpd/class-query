@@ -130,6 +130,8 @@ else{
 	echo 'Sorry, user '.$user_id.' not found.';
 }
 }}}
+==See All Examples==
+[http://code.google.com/p/class-query/source/browse/#svn/www/Examples See all examples.]
 
 <br />
 =Checkout=
