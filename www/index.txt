@@ -1,0 +1,138 @@
+<h1>Class Query</h1>
+
+<wiki:toc max_depth="3" />
+<br />
+=Examples=
+==Select==
+{{{
+// Basic select
+$q=new Query;
+$q
+	->select()
+	->from('`user`')
+	->run();
+
+// -> SELECT * FROM `user`
+}}}
+{{{
+// Select using page
+$q=new Query;
+$q
+	->select()
+	->from('`user`')
+	->limit(20)
+	->page(3)
+	->run();
+
+// -> SELECT * FROM `user` LIMIT 60,20
+}}}
+==Insert==
+{{{
+$q=new Query;
+$q
+	->insert(
+		'`user`',
+		array(
+			'`name`'=>'user_name',
+			'`email`'=>'email@example.com'
+		)
+	)
+	->run();
+
+// -> INSERT INTO `user`VALUES(`name`='', `email`='')
+}}}
+==Update==
+{{{
+// Update using where_equal_to and limit
+$q=new Query;
+$q
+	->update('`user`')
+	->set(
+		array(
+			'`user`.`name`'=>'new_user_name',
+			'`user`.`email`'=>'new_email@example.com'
+		)
+	)
+	->where_equal_to(
+		array(
+			'`user`.`user_id`'=>123456
+		)
+	)
+	->limit(1)
+	->run();
+
+// -> UPDATE `user`
+//    SET `user`.`name`='new_user_name', `user`.`email`=>'new_email@example.com'
+//    WHERE `user`.`user_id`=>'123456'
+//    LIMIT 1
+}}}
+==Replace==
+{{{
+// ...
+}}}
+==Delete==
+{{{
+// ...
+}}}
+
+<br />
+=Parameters=
+==Select==
+======
+==Insert==
+======
+==Update==
+======
+==Replace==
+======
+==Delete==
+======
+
+<br />
+=Usage=
+==Quick Install==
+  # Download class-query from http://code.google.com/p/class-query/downloads/list
+  # include 'class-query';
+  # See examples for usage.
+==Example==
+  # Include 'class-query.php'
+  # Initialized the Query class and chain parameters.
+  # Call run() or get() as the last chained function.
+{{{
+require 'class-query.php';
+$user_id=123456;
+$q=new Query;
+$q
+	->select(
+		array(
+			'`user`.`user_id`',
+			'`user`.`name`',
+			'`user`.`email`'
+		)
+	)
+	->from('`user`')
+	->where_equal_to(
+		array(
+			'`user_id`'=>$user_id
+		)
+	)
+	->limit(1)
+	->run();
+if($q){
+	$user=$q->get_selected();
+	echo
+		'Hello '.$user['name'].',<br />'.
+		'Your email is currently set to '.$user['name'].' '.
+		'and your user id is '.$user['user_id'].'.<br />'.
+		'';
+}
+else{
+	echo 'Sorry, user '.$user_id.' not found.';
+}
+}}}
+
+<br />
+=Checkout=
+{{{
+svn checkout http://class-query.googlecode.com/svn/
+}}}
