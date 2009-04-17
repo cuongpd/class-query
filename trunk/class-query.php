@@ -50,6 +50,33 @@
 				'';
 			return $this;
 		}
+		/* INSERTS */
+		public function inserts($table,$keys,$values){
+			// insert_multiple() alias
+			return self::insert_multiple($table,$keys,$values);
+		}
+		public function insert_multiple($table,$keys,$values){
+			self::set_table($table);
+			$insert_keys=$keys;
+			self::set_keys($insert_keys);
+			$insert_values=array();
+			foreach($values as $v){
+				$vs=array();
+				foreach($v as $value){
+					$vs[]=(!is_null($value)?sprintf('\'%s\'',mysql_real_escape_string($value)):'NULL');
+				}
+				$insert_values[]='('.implode(',',$vs).')';
+			}
+			self::set_values($insert_values);
+			$this->insert_multiple="\n".
+				'INSERT INTO '.$table.'('."\n".
+					"\t".implode(','."\n\t",$insert_keys)."\n".
+				')'."\n".
+				'VALUES'."\n".
+					"\t".implode(','."\n\t",$insert_values)."\n".
+				'';
+			return $this;
+		}
 		/* REPLACE */
 		public function get_replaced(){
 			return self::get_affected();
@@ -243,14 +270,17 @@
 			if(self::get_delete_query()){
 				return $this->delete_query;
 			}
-			elseif(self::get_insert_query()){
-				return $this->insert_query;
+			elseif(self::get_insert_into_query()){
+				return $this->insert_into_query;
 			}
 			elseif(self::get_select_query()){
 				return $this->select_query;
 			}
 			elseif(self::get_update_query()){
 				return $this->update_query;
+			}
+			elseif(self::get_insert_multiple()){
+				return $this->insert_multiple_query;
 			}
 			else{
 				return false;
@@ -309,10 +339,18 @@
 						'';
 			}
 		}
-		private function get_insert_query(){
+		private function get_insert_into_query(){
 			if(isset($this->insert_into)){
 				$this->query_type='insert';
-				$this->insert_query=$this->insert_into;
+				$this->insert_into_query=$this->insert_into;
+				return true;
+			}
+			return false;
+		}
+		private function get_insert_multiple(){
+			if(isset($this->insert_multiple)){
+				$this->query_type='insert_multiple';
+				$this->insert_multiple_query=$this->insert_multiple;
 				return true;
 			}
 			return false;
@@ -423,9 +461,17 @@
 		}
 		private function get_where(){
 			$wheres=array();
+			$where_greater_than_or_equal_to=self::get_where_greater_than_or_equal_to();
+			$where_less_than_or_equal_to=self::get_where_less_than_or_equal_to();
 			$where_equal_or=self::get_where_equal_or();
 			$where_equal_to=self::get_where_equal_to();
 			$where_like_binary=self::get_where_like_binary();
+			if(!empty($where_greater_than_or_equal_to)){
+				$wheres[]=$where_greater_than_or_equal_to;
+			}
+			if(!empty($where_less_than_or_equal_to)){
+				$wheres[]=$where_less_than_or_equal_to;
+			}
 			if(!empty($where_equal_or)){
 				$wheres[]=$where_equal_or;
 			}
@@ -484,9 +530,7 @@
 			else{
 				$where_equal_to=array();
 				foreach($this->where_equal_to as $k=>$v){
-					if(!is_null($v)){
-						$where_equal_to[]=sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
-					}
+					$where_equal_to[]=is_null($v)?$k.' IS NULL':sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
 				}
 				return implode(' AND'."\n\t",$where_equal_to).' ';
 			}
@@ -496,8 +540,20 @@
 			// > greater than
 		}
 		private function get_where_greater_than_or_equal_to(){
-			// FINISH
 			// >= greater than or equal to
+			if(
+				!isset($this->where_greater_than_or_equal_to)||
+				!is_array($this->where_greater_than_or_equal_to)
+				){
+				return '';
+			}
+			else{
+				$where_greater_than_or_equal_to=array();
+				foreach($this->where_greater_than_or_equal_to as $k=>$v){
+					$where_greater_than_or_equal_to[]=is_null($v)?$k.' IS NULL':sprintf($k.'>=\'%s\'',mysql_real_escape_string($v));
+				}
+				return implode(' AND'."\n\t",$where_greater_than_or_equal_to).' ';
+			}
 		}
 		private function get_where_in(){
 			// FINISH
@@ -508,8 +564,20 @@
 			// < Less than
 		}
 		private function get_where_less_than_or_equal_to(){
-			// FINISH
 			// <= Less than or equal to
+			if(
+				!isset($this->where_less_than_or_equal_to)||
+				!is_array($this->where_less_than_or_equal_to)
+				){
+				return '';
+			}
+			else{
+				$where_less_than_or_equal_to=array();
+				foreach($this->where_less_than_or_equal_to as $k=>$v){
+					$where_less_than_or_equal_to[]=is_null($v)?$k.' IS NULL':sprintf($k.'<=\'%s\'',mysql_real_escape_string($v));
+				}
+				return implode(' AND'."\n\t",$where_less_than_or_equal_to).' ';
+			}
 		}
 		private function get_where_like(){
 			// FINISH
@@ -552,7 +620,8 @@
 				$function='run_'.$this->query_type;
 				switch($this->query_type){
 					case 'delete':
-					case 'insert':
+					case 'insert_into':
+					case 'insert_multiple':
 					case 'update':
 						return self::$function();
 						break;
@@ -575,6 +644,9 @@
 							}
 						}
 						break;
+					default:
+						die('err: bad query type:'.$this->query_type);
+						break;
 				}
 			}
 			return false;
@@ -582,8 +654,11 @@
 		private function run_delete(){
 			return self::run_query($this->delete_query);
 		}
-		private function run_insert(){
-			return self::run_query($this->insert_query);
+		private function run_insert_into(){
+			return self::run_query($this->insert_into_query);
+		}
+		private function run_insert_multiple(){
+			return self::run_query($this->insert_multiple_query);
 		}
 		private function run_select(){
 			return self::run_query($this->select_query);
@@ -592,12 +667,16 @@
 			return self::run_query($this->update_query);
 		}
 		private function run_query($query){
-			$result=mysql_query($query) or die('Error in query 1229');
+			// $debug=false;
+			$debug=true;
+			$result=mysql_query($query) or die('Error in query'.($debug?': '.mysql_error():'.'));
 			switch($this->query_type){
 				case 'delete':
 					return self::get_affected();
-				case 'insert':
+				case 'insert_into':
 					return self::get_inserted_id();
+				case 'insert_multiple':
+					return true;
 				case 'select':
 					$this->results=mysql_num_rows($result);
 					if($result&&$this->results>0){
@@ -607,6 +686,15 @@
 				case 'update':
 					return self::get_affected();
 			}
+		}
+		/* SHOW */
+		public function show(){
+			echo self::get();
+		}
+		/* DISPLAY */
+		public function display(){
+			// show() alias
+			return self::show();
 		}
 	}
 ?>
