@@ -122,7 +122,7 @@
 			}
 			return $results;
 		}
-		public function select($select){
+		public function select($select='*'){
 			// SELECT Retrieves fields from one or more tables.
 			$this->select=$select;
 			return $this;
@@ -341,7 +341,7 @@
 		}
 		private function get_insert_into_query(){
 			if(isset($this->insert_into)){
-				$this->query_type='insert';
+				$this->query_type='insert_into';
 				$this->insert_into_query=$this->insert_into;
 				return true;
 			}
