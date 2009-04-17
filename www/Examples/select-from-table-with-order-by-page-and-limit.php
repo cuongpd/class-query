@@ -15,6 +15,19 @@
 		->limit(3)
 		->page(2)
 		->run();
+		// ->show();
+	/* -> 
+		SELECT
+			`user`.`user_id`,
+			`user`.`name`,
+			`user`.`email`
+		FROM
+			`user`
+		ORDER BY
+			`user`.`name` ASC
+		LIMIT
+			3,3
+	*/
 	if($q){
 		$users=$q->get_selected();
 		foreach($users as $user){

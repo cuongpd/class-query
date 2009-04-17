@@ -19,6 +19,19 @@
 		)
 		->limit(1)
 		->run();
+		// ->show();
+	/* -> 
+		SELECT
+			`user`.`user_id`,
+			`user`.`name`,
+			`user`.`email`
+		FROM
+			`user`
+		WHERE
+			`user_id`='123456' 
+		LIMIT
+			1
+	*/
 	if($q){
 		$user=$q->get_selected();
 		echo

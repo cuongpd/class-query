@@ -13,6 +13,17 @@
 			)
 		)
 		->run();
+		// ->show();
+	/* -> 
+		INSERT INTO `user`(
+			`name`,
+			`email`
+		)
+		VALUES(
+			'user1151175574',
+			'user1151175574@example.com'
+		)
+	*/
 	if($q){
 		$user_id=$q->get_inserted();
 		$q=new Query;
@@ -32,6 +43,19 @@
 			)
 			->limit(1)
 			->run();
+			// ->show();
+		/* -> 
+			SELECT
+				`user`.`user_id`,
+				`user`.`name`,
+				`user`.`email`
+			FROM
+				`user`
+			WHERE
+				`user`.`user_id`='1151175574'
+			LIMIT
+				1
+		*/
 		if($q){
 			$user=$q->get_selected();
 			echo

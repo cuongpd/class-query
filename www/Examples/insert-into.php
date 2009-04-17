@@ -13,6 +13,17 @@
 			)
 		)
 		->run();
+		// ->show();
+	/* -> 
+		INSERT INTO `user`(
+			`name`,
+			`email`
+		)
+		VALUES(
+			'user1402145267',
+			'user1402145267@example.com'
+		)
+	*/
 	if($q){
 		echo 'User added.';
 	}
