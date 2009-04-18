@@ -36,7 +36,7 @@
 		$user=$q->get_selected();
 		echo
 			'Hello '.$user['name'].',<br />'.
-			'Your email is currently set to '.$user['name'].' '.
+			'Your email is currently set to '.$user['email'].' '.
 			'and your user id is '.$user['user_id'].'.<br />'.
 			'';
 	}
