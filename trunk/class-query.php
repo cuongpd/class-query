@@ -13,33 +13,49 @@
 			return self::get_affected();
 		}
 		/* INSERT */
-		public function get_insert_id(){
+		public function get_insert_id($select=''){
 			// alias for get_inserted_id()
-			return self::get_inserted_id();
+			return self::get_inserted_id($select);
 		}
-		public function get_inserted(){
+		public function get_inserted($select=''){
 			// alias for get_inserted_id()
-			return self::get_inserted_id();
+			return self::get_inserted_id($select);
 		}
-		public function get_inserted_id(){
+		public function get_inserted_id($select=''){
 			$this->inserted=mysql_insert_id();
-			return $this->inserted;
+			if(''==$select){
+				return $this->inserted;
+			}
+			else{
+				// use select
+				self::select($select);
+				self::from($this->table);
+				self::limit(1);
+				self::where_equal_to(
+					array(
+						'`id`'=>$this->inserted
+					)
+				);
+				self::_get_select_query();
+				return self::_run_select();
+			}
 		}
-		public function insert($table,$keys_and_values){
+		public function insert($table,$keys_and_values,$on_duplicate_key_update=''){
 			// insert_into() alias
-			return self::insert_into($table,$keys_and_values);
+			return self::insert_into($table,$keys_and_values,$on_duplicate_key_update);
 		}
-		public function insert_into($table,$keys_and_values){
-			self::set_table($table);
-			self::set_keys_and_values($keys_and_values);
+		public function insert_into($table,$keys_and_values,$on_duplicate_key_update=''){
+			self::_set_table($table);
+			self::_set_keys_and_values($keys_and_values);
 			$insert_keys=array();
 			$insert_values=array();
 			foreach($keys_and_values as $key=>$value){
 				$insert_keys[]=$key;
 				$insert_values[]=(!is_null($value)?sprintf('\'%s\'',mysql_real_escape_string($value)):'NULL');
 			}
-			self::set_keys($insert_keys);
-			self::set_values($insert_values);
+			self::_set_keys($insert_keys);
+			self::_set_values($insert_values);
+			self::_on_duplicate_key_update($on_duplicate_key_update);
 			$this->insert_into="\n".
 				'INSERT INTO '.$table.'('."\n".
 					"\t".implode(','."\n\t",$insert_keys)."\n".
@@ -47,6 +63,7 @@
 				'VALUES('."\n".
 					"\t".implode(','."\n\t",$insert_values)."\n".
 				')'."\n".
+				$this->on_duplicate_key_update.
 				'';
 			return $this;
 		}
@@ -56,9 +73,9 @@
 			return self::insert_multiple($table,$keys,$values);
 		}
 		public function insert_multiple($table,$keys,$values){
-			self::set_table($table);
+			self::_set_table($table);
 			$insert_keys=$keys;
-			self::set_keys($insert_keys);
+			self::_set_keys($insert_keys);
 			$insert_values=array();
 			foreach($values as $v){
 				$vs=array();
@@ -67,7 +84,7 @@
 				}
 				$insert_values[]='('.implode(',',$vs).')';
 			}
-			self::set_values($insert_values);
+			self::_set_values($insert_values);
 			$this->insert_multiple="\n".
 				'INSERT INTO '.$table.'('."\n".
 					"\t".implode(','."\n\t",$insert_keys)."\n".
@@ -146,23 +163,19 @@
 			return $this;
 		}
 		/* Get helpers */
-		private function set_keys($keys){
+		private function _set_keys($keys){
 			$this->keys=$keys;
 		}
-		private function set_keys_and_values($keys_and_values){
+		private function _set_keys_and_values($keys_and_values){
 			$this->keys_and_values=$keys_and_values;
 		}
-		private function set_table($table){
+		private function _set_table($table){
 			$this->table=$table;
 		}
-		private function set_values($values){
+		private function _set_values($values){
 			$this->values=$values;
 		}
 		/* Query helpers */
-		private function get_affected(){
-			// Returns number of affected rows by the last INSERT, UPDATE, REPLACE or DELETE
-			return mysql_affected_rows();
-		}
 		public function distinct($distinct){
 			$this->distinct=$distinct;
 			return $this;
@@ -171,6 +184,10 @@
 			// FROM target the specifed tables.
 			$this->from=$from;
 			return $this;
+		}
+		public function get_affected(){
+			// Returns number of affected rows by the last INSERT, UPDATE, REPLACE or DELETE
+			return mysql_affected_rows();
 		}
 		public function group_by($group_by){
 			$this->group_by=$group_by;
@@ -264,57 +281,69 @@
 			$this->where_not_like=$where_not_like;
 			return $this;
 		}
+		private function _on_duplicate_key_update($on_duplicate_key_update){
+			$this->on_duplicate_key_update='';
+			if(''!==$on_duplicate_key_update&&is_array($on_duplicate_key_update)){
+				$update=array();
+				foreach($on_duplicate_key_update as $key=>$value){
+					$update[]=$key.'='.(!is_null($value)?sprintf('\'%s\'',mysql_real_escape_string($value)):'NULL');
+				}
+				$this->on_duplicate_key_update=
+					'ON DUPLICATE KEY UPDATE '."\n".
+						"\t".implode(','."\n\t",$update)."\n";
+			}
+		}
 		/* GET */
 		public function get(){
 			// returns select, insert or update query
-			if(self::get_delete_query()){
+			if(self::_get_delete_query()){
 				return $this->delete_query;
 			}
-			elseif(self::get_insert_into_query()){
+			elseif(self::_get_insert_into_query()){
 				return $this->insert_into_query;
 			}
-			elseif(self::get_select_query()){
+			elseif(self::_get_select_query()){
 				return $this->select_query;
 			}
-			elseif(self::get_update_query()){
+			elseif(self::_get_update_query()){
 				return $this->update_query;
 			}
-			elseif(self::get_insert_multiple()){
+			elseif(self::_get_insert_multiple()){
 				return $this->insert_multiple_query;
 			}
 			else{
 				return false;
 			}
 		}
-		private function get_distinct(){
+		private function _get_distinct(){
 			// FINISH
 		}
-		private function get_delete_from(){
+		private function _get_delete_from(){
 			return
 				'DELETE FROM'."\n".
 					"\t".$this->delete_from."\n".
 					'';
 		}
-		private function get_delete_query(){
+		private function _get_delete_query(){
 			if(isset($this->delete_from)){
 				$this->query_type='delete';
 				$this->delete_query="\n".
-					self::get_delete_from().
-					self::get_where().
-					self::get_order_by().
-					self::get_limit().
+					self::_get_delete_from().
+					self::_get_where().
+					self::_get_order_by().
+					self::_get_limit().
 					'';
 				return true;
 			}
 			return false;
 		}
-		private function get_from(){
+		private function _get_from(){
 			return
 				'FROM'."\n".
 					"\t".$this->from."\n".
 					'';
 		}
-		private function get_group_by(){
+		private function _get_group_by(){
 			// GROUP BY Determines how the records should be grouped.
 			if(isset($this->group_by)){
 				return
@@ -323,7 +352,7 @@
 						'';
 			}
 		}
-		private function get_having(){
+		private function _get_having(){
 			if(isset($this->having)){
 				return
 					'HAVING'."\n".
@@ -331,7 +360,7 @@
 						'';
 			}
 		}
-		private function get_inner_join(){
+		private function _get_inner_join(){
 			if(isset($this->inner_join)){
 				return
 					'INNER JOIN'."\n".
@@ -339,7 +368,7 @@
 						'';
 			}
 		}
-		private function get_insert_into_query(){
+		private function _get_insert_into_query(){
 			if(isset($this->insert_into)){
 				$this->query_type='insert_into';
 				$this->insert_into_query=$this->insert_into;
@@ -347,7 +376,7 @@
 			}
 			return false;
 		}
-		private function get_insert_multiple(){
+		private function _get_insert_multiple(){
 			if(isset($this->insert_multiple)){
 				$this->query_type='insert_multiple';
 				$this->insert_multiple_query=$this->insert_multiple;
@@ -355,11 +384,11 @@
 			}
 			return false;
 		}
-		private function get_join(){
+		private function _get_join(){
 			// FINISH
-			return self::get_inner_join();
+			return self::_get_inner_join();
 		}
-		private function get_limit(){
+		private function _get_limit(){
 			if(!isset($this->limit)){
 				return '';
 			}
@@ -376,7 +405,7 @@
 						'';
 			}
 		}
-		private function get_order_by(){
+		private function _get_order_by(){
 			// ORDER BY to order the records.
 			if(!isset($this->order_by)){
 				return '';
@@ -388,7 +417,7 @@
 						'';
 			}
 		}
-		private function get_select(){
+		private function _get_select(){
 			if(!is_array($this->select)){
 				return
 					'SELECT'."\n".
@@ -406,24 +435,24 @@
 						'';
 			}
 		}
-		private function get_select_query($use_limit=null){
+		private function _get_select_query($use_limit=null){
 			if(isset($this->select)){
 				$this->query_type='select';
 				$this->select_query="\n".
-					self::get_select().
-					self::get_from().
-					self::get_join().
-					self::get_where().
-					self::get_group_by().
-					self::get_having().
-					self::get_order_by().
-					($use_limit||!isset($this->page)?self::get_limit():'').
+					self::_get_select().
+					self::_get_from().
+					self::_get_join().
+					self::_get_where().
+					self::_get_group_by().
+					self::_get_having().
+					self::_get_order_by().
+					($use_limit||!isset($this->page)?self::_get_limit():'').
 					'';
 				return true;
 			}
 			return false;
 		}
-		private function get_set(){
+		private function _get_set(){
 			$sets=array();
 			$set_equals=array();
 			foreach($this->set as $k=>$v){
@@ -440,32 +469,33 @@
 					"\t".implode(','."\n\t",$sets)."\n".
 					'';
 		}
-		private function get_update(){
+		private function _get_update(){
 			return
 				'UPDATE'."\n".
 					"\t".$this->update."\n".
 					'';
 		}
-		private function get_update_query(){
+		private function _get_update_query(){
 			if(isset($this->update)){
 				$this->query_type='update';
 				$this->update_query="\n".
-					self::get_update().
-					self::get_set().
-					self::get_where().
-					self::get_limit().
+					self::_get_update().
+					self::_get_set().
+					self::_get_where().
+					self::_get_limit().
 					'';
 				return true;
 			}
 			return false;
 		}
-		private function get_where(){
+		private function _get_where(){
 			$wheres=array();
-			$where_greater_than_or_equal_to=self::get_where_greater_than_or_equal_to();
-			$where_less_than_or_equal_to=self::get_where_less_than_or_equal_to();
-			$where_equal_or=self::get_where_equal_or();
-			$where_equal_to=self::get_where_equal_to();
-			$where_like_binary=self::get_where_like_binary();
+			$where_greater_than_or_equal_to=self::_get_where_greater_than_or_equal_to();
+			$where_less_than_or_equal_to=self::_get_where_less_than_or_equal_to();
+			$where_equal_or=self::_get_where_equal_or();
+			$where_equal_to=self::_get_where_equal_to();
+			$where_not_equal_to=self::_get_where_not_equal_to();
+			$where_like_binary=self::_get_where_like_binary();
 			if(!empty($where_greater_than_or_equal_to)){
 				$wheres[]=$where_greater_than_or_equal_to;
 			}
@@ -477,6 +507,9 @@
 			}
 			if(!empty($where_equal_to)){
 				$wheres[]=$where_equal_to;
+			}
+			if(!empty($where_not_equal_to)){
+				$wheres[]=$where_not_equal_to;
 			}
 			if(!empty($where_like_binary)){
 				$wheres[]=$where_like_binary;
@@ -491,11 +524,11 @@
 						'';
 			}
 		}
-		private function get_where_between(){
+		private function _get_where_between(){
 			// FINISH
 			// BETWEEN Checks for values between a range
 		}
-		private function get_where_equal_or(){
+		private function _get_where_equal_or(){
 			if(
 				!isset($this->where_equal_or)||
 				!is_array($this->where_equal_or)
@@ -519,7 +552,7 @@
 					') ';
 			}
 		}
-		private function get_where_equal_to(){
+		private function _get_where_equal_to(){
 			// = Equal to
 			if(
 				!isset($this->where_equal_to)||
@@ -535,11 +568,11 @@
 				return implode(' AND'."\n\t",$where_equal_to).' ';
 			}
 		}
-		private function get_where_greater_than(){
+		private function _get_where_greater_than(){
 			// FINISH
 			// > greater than
 		}
-		private function get_where_greater_than_or_equal_to(){
+		private function _get_where_greater_than_or_equal_to(){
 			// >= greater than or equal to
 			if(
 				!isset($this->where_greater_than_or_equal_to)||
@@ -555,15 +588,15 @@
 				return implode(' AND'."\n\t",$where_greater_than_or_equal_to).' ';
 			}
 		}
-		private function get_where_in(){
+		private function _get_where_in(){
 			// FINISH
 			// IN Checks for values in a list
 		}
-		private function get_where_less_than(){
+		private function _get_where_less_than(){
 			// FINISH
 			// < Less than
 		}
-		private function get_where_less_than_or_equal_to(){
+		private function _get_where_less_than_or_equal_to(){
 			// <= Less than or equal to
 			if(
 				!isset($this->where_less_than_or_equal_to)||
@@ -579,11 +612,11 @@
 				return implode(' AND'."\n\t",$where_less_than_or_equal_to).' ';
 			}
 		}
-		private function get_where_like(){
+		private function _get_where_like(){
 			// FINISH
 			// LIKE Used to compare strings
 		}
-		private function get_where_like_binary(){
+		private function _get_where_like_binary(){
 			if(
 				!isset($this->where_like_binary)||
 				!is_array($this->where_like_binary)
@@ -600,16 +633,28 @@
 				return implode(' AND'."\n\t",$where_like_binary)."\n";
 			}
 		}
-		private function get_where_not_equal_to(){
-			// FINISH
+		private function _get_where_not_equal_to(){
 			// <> Not equal to
 			// != Not equal to
+			if(
+				!isset($this->where_not_equal_to)||
+				!is_array($this->where_not_equal_to)
+				){
+				return '';
+			}
+			else{
+				$where_not_equal_to=array();
+				foreach($this->where_not_equal_to as $k=>$v){
+					$where_not_equal_to[]=is_null($v)?$k.' IS NOT NULL':sprintf($k.'!=\'%s\'',mysql_real_escape_string($v));
+				}
+				return implode(' AND'."\n\t",$where_not_equal_to).' ';
+			}
 		}
-		private function get_where_not_in(){
+		private function _get_where_not_in(){
 			// FINISH
 			// NOT IN Ensures the value is not in the list
 		}
-		private function get_where_not_like(){
+		private function _get_where_not_like(){
 			// FINISH
 			// NOT LIKE Used to compare strings
 		}
@@ -617,7 +662,7 @@
 		public function run(){
 			// runs query, returns mysql result
 			if(self::get()){
-				$function='run_'.$this->query_type;
+				$function='_run_'.$this->query_type;
 				switch($this->query_type){
 					case 'delete':
 					case 'insert_into':
@@ -638,7 +683,7 @@
 								// set offset
 								self::offset(($this->page*$this->limit)-$this->limit);
 								// update select query with limit now that pages is set
-								self::get_select_query(true);
+								self::_get_select_query(true);
 								// run select query with updated limit and offset
 								return self::run_select();
 							}
@@ -651,22 +696,22 @@
 			}
 			return false;
 		}
-		private function run_delete(){
-			return self::run_query($this->delete_query);
+		private function _run_delete(){
+			return self::_run_query($this->delete_query);
 		}
-		private function run_insert_into(){
-			return self::run_query($this->insert_into_query);
+		private function _run_insert_into(){
+			return self::_run_query($this->insert_into_query);
 		}
-		private function run_insert_multiple(){
-			return self::run_query($this->insert_multiple_query);
+		private function _run_insert_multiple(){
+			return self::_run_query($this->insert_multiple_query);
 		}
-		private function run_select(){
-			return self::run_query($this->select_query);
+		private function _run_select(){
+			return self::_run_query($this->select_query);
 		}
-		private function run_update(){
-			return self::run_query($this->update_query);
+		private function _run_update(){
+			return self::_run_query($this->update_query);
 		}
-		private function run_query($query){
+		private function _run_query($query){
 			// $debug=false;
 			$debug=true;
 			$result=mysql_query($query) or die('Error in query'.($debug?': '.mysql_error():'.'));
