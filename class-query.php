@@ -106,7 +106,7 @@
 				$replace_values[]=(!is_null($value)?sprintf('\'%s\'',mysql_real_escape_string($value)):'NULL');
 			}
 			$this->insert_into="\n".
-				'REPLACE INTO '.$table.'('."\n".
+				'REPLACE '.$table.'('."\n".
 					"\t".implode(','."\n\t",$replace_keys)."\n".
 				')'."\n".
 				'VALUES('."\n".
@@ -119,6 +119,13 @@
 			return self::replace($table,$keys_and_values);
 		}
 		/* SELECT */
+		public function count(){
+			// alias for get_selected_count()
+			return self::get_selected_count();
+		}
+		public function get_selected_count(){
+			return $this->results;
+		}
 		public function get_selected(){
 			// returns an array of the SELECT result(s)
 			if(isset($this->limit)&&1==$this->limit){
@@ -417,6 +424,9 @@
 						'';
 			}
 		}
+		private function _get_results($result){
+			$this->results=mysql_num_rows($result);
+		}
 		private function _get_select(){
 			if(!is_array($this->select)){
 				return
@@ -541,8 +551,8 @@
 					if(false!==strpos($k,'%s')){
 						$where_equal_or[]=sprintf($k,mysql_real_escape_string($v));
 					}
-					elseif(!is_null($v)){
-						$where_equal_or[]=sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
+					else{
+						$where_equal_or[]=is_null($v)?$k.' IS NULL':sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
 					}
 				}
 				return
@@ -563,7 +573,12 @@
 			else{
 				$where_equal_to=array();
 				foreach($this->where_equal_to as $k=>$v){
-					$where_equal_to[]=is_null($v)?$k.' IS NULL':sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
+					if(false!==strpos($k,'%s')){
+						$where_equal_to[]=sprintf($k,mysql_real_escape_string($v));
+					}
+					else{
+						$where_equal_to[]=is_null($v)?$k.' IS NULL':sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
+					}
 				}
 				return implode(' AND'."\n\t",$where_equal_to).' ';
 			}
@@ -583,7 +598,7 @@
 			else{
 				$where_greater_than_or_equal_to=array();
 				foreach($this->where_greater_than_or_equal_to as $k=>$v){
-					$where_greater_than_or_equal_to[]=is_null($v)?$k.' IS NULL':sprintf($k.'>=\'%s\'',mysql_real_escape_string($v));
+					$where_greater_than_or_equal_to[]=is_null($v)?$k.' IS NULL':self::_key_value($k,$v,'>=');
 				}
 				return implode(' AND'."\n\t",$where_greater_than_or_equal_to).' ';
 			}
@@ -658,6 +673,10 @@
 			// FINISH
 			// NOT LIKE Used to compare strings
 		}
+		private function _key_value($key,$value,$operator='='){
+			$value=(substr($value,0,1)=='!'?substr($value,1):'\''.$value.'\'');
+			return sprintf($key.$operator.'%s',mysql_real_escape_string($value));
+		}
 		/* RUN */
 		public function run(){
 			// runs query, returns mysql result
@@ -685,7 +704,7 @@
 								// update select query with limit now that pages is set
 								self::_get_select_query(true);
 								// run select query with updated limit and offset
-								return self::run_select();
+								return self::_run_select();
 							}
 						}
 						break;
@@ -723,7 +742,7 @@
 				case 'insert_multiple':
 					return true;
 				case 'select':
-					$this->results=mysql_num_rows($result);
+					self::_get_results($result);
 					if($result&&$this->results>0){
 						return $this->result=$result;
 					}
