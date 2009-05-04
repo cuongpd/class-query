@@ -44,7 +44,10 @@
 			// insert_into() alias
 			return self::insert_into($table,$keys_and_values,$on_duplicate_key_update);
 		}
-		public function insert_into($table,$keys_and_values,$on_duplicate_key_update=''){
+		public function insert_ignore($table,$keys_and_values,$on_duplicate_key_update=''){
+			return self::insert_into($table,$keys_and_values,$on_duplicate_key_update,'IGNORE');
+		}
+		public function insert_into($table,$keys_and_values,$on_duplicate_key_update='',$insert_options=''){
 			self::_set_table($table);
 			self::_set_keys_and_values($keys_and_values);
 			$insert_keys=array();
@@ -57,7 +60,7 @@
 			self::_set_values($insert_values);
 			self::_on_duplicate_key_update($on_duplicate_key_update);
 			$this->insert_into="\n".
-				'INSERT INTO '.$table.'('."\n".
+				'INSERT '.(empty($insert_options)?'':$insert_options.' ').'INTO '.$table.'('."\n".
 					"\t".implode(','."\n\t",$insert_keys)."\n".
 				')'."\n".
 				'VALUES('."\n".
@@ -106,7 +109,7 @@
 				$replace_values[]=(!is_null($value)?sprintf('\'%s\'',mysql_real_escape_string($value)):'NULL');
 			}
 			$this->insert_into="\n".
-				'REPLACE '.$table.'('."\n".
+				'REPLACE INTO '.$table.'('."\n".
 					"\t".implode(','."\n\t",$replace_keys)."\n".
 				')'."\n".
 				'VALUES('."\n".
@@ -306,8 +309,8 @@
 			if(self::_get_delete_query()){
 				return $this->delete_query;
 			}
-			elseif(self::_get_insert_into_query()){
-				return $this->insert_into_query;
+			elseif(self::_get_insert_query()){
+				return $this->insert_query;
 			}
 			elseif(self::_get_select_query()){
 				return $this->select_query;
@@ -375,10 +378,15 @@
 						'';
 			}
 		}
-		private function _get_insert_into_query(){
+		private function _get_insert_query(){
 			if(isset($this->insert_into)){
 				$this->query_type='insert_into';
-				$this->insert_into_query=$this->insert_into;
+				$this->insert_query=$this->insert_into;
+				return true;
+			}
+			elseif(isset($this->insert_ignore_into)){
+				$this->query_type='insert_ignore_into';
+				$this->insert_query=$this->insert_ignore_into;
 				return true;
 			}
 			return false;
@@ -436,8 +444,13 @@
 			}
 			else{
 				$selects=array();
-				foreach($this->select as $select){
-					$selects[]=$select;
+				foreach($this->select as $k=>$v){
+					if(false!==strpos($k,'%s')){
+						$selects[]=sprintf($k,mysql_real_escape_string($v));
+					}
+					else{
+						$selects[]=$v;
+					}
 				}
 				return
 					'SELECT'."\n".
@@ -505,6 +518,7 @@
 			$where_equal_or=self::_get_where_equal_or();
 			$where_equal_to=self::_get_where_equal_to();
 			$where_not_equal_to=self::_get_where_not_equal_to();
+			$where_like=self::_get_where_like();
 			$where_like_binary=self::_get_where_like_binary();
 			if(!empty($where_greater_than_or_equal_to)){
 				$wheres[]=$where_greater_than_or_equal_to;
@@ -520,6 +534,9 @@
 			}
 			if(!empty($where_not_equal_to)){
 				$wheres[]=$where_not_equal_to;
+			}
+			if(!empty($where_like)){
+				$wheres[]=$where_like;
 			}
 			if(!empty($where_like_binary)){
 				$wheres[]=$where_like_binary;
@@ -628,8 +645,19 @@
 			}
 		}
 		private function _get_where_like(){
-			// FINISH
-			// LIKE Used to compare strings
+			if(
+				!isset($this->where_like)||
+				!is_array($this->where_like)
+				){
+				return '';
+			}
+			else{
+				$where_like=array();
+				foreach($this->where_like as $k=>$v){
+					$where_like[]=sprintf($k.' LIKE \'%%%s%%\'',mysql_real_escape_string($v));
+				}
+				return implode(' AND'."\n\t",$where_like).' ';
+			}
 		}
 		private function _get_where_like_binary(){
 			if(
@@ -645,7 +673,7 @@
 						$where_like_binary[]=sprintf($k.' LIKE BINARY \'%s\'',mysql_real_escape_string($v));
 					}
 				}
-				return implode(' AND'."\n\t",$where_like_binary)."\n";
+				return implode(' AND'."\n\t",$where_like_binary).' ';
 			}
 		}
 		private function _get_where_not_equal_to(){
@@ -684,6 +712,7 @@
 				$function='_run_'.$this->query_type;
 				switch($this->query_type){
 					case 'delete':
+					case 'insert_ignore_into':
 					case 'insert_into':
 					case 'insert_multiple':
 					case 'update':
@@ -718,8 +747,11 @@
 		private function _run_delete(){
 			return self::_run_query($this->delete_query);
 		}
+		private function _run_insert_ignore_into(){
+			return self::_run_query($this->insert_query);
+		}
 		private function _run_insert_into(){
-			return self::_run_query($this->insert_into_query);
+			return self::_run_query($this->insert_query);
 		}
 		private function _run_insert_multiple(){
 			return self::_run_query($this->insert_multiple_query);
