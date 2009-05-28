@@ -639,7 +639,7 @@
 			else{
 				$where_less_than_or_equal_to=array();
 				foreach($this->where_less_than_or_equal_to as $k=>$v){
-					$where_less_than_or_equal_to[]=is_null($v)?$k.' IS NULL':sprintf($k.'<=\'%s\'',mysql_real_escape_string($v));
+					$where_less_than_or_equal_to[]=is_null($v)?$k.' IS NULL':self::_key_value($k,$v,'<=');
 				}
 				return implode(' AND'."\n\t",$where_less_than_or_equal_to).' ';
 			}
