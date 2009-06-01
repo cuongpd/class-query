@@ -168,8 +168,11 @@
 			$this->set=$set;
 			return $this;
 		}
-		public function update($update){
+		public function update($update,$set=array()){
 			$this->update=$update;
+			if(!empty($set)){
+				self::set($set);
+			}
 			return $this;
 		}
 		/* Get helpers */
@@ -277,6 +280,10 @@
 		}
 		public function where_like_binary($where_like_binary){
 			$this->where_like_binary=$where_like_binary;
+			return $this;
+		}
+		public function where_like_or($where_like_or){
+			$this->where_like_or=$where_like_or;
 			return $this;
 		}
 		public function where_not_equal_to($where_not_equal_to){
@@ -519,6 +526,8 @@
 			$where_equal_to=self::_get_where_equal_to();
 			$where_not_equal_to=self::_get_where_not_equal_to();
 			$where_like=self::_get_where_like();
+			$where_like_or=self::_get_where_like_or();
+			$where_not_like=self::_get_where_not_like();
 			$where_like_binary=self::_get_where_like_binary();
 			if(!empty($where_greater_than_or_equal_to)){
 				$wheres[]=$where_greater_than_or_equal_to;
@@ -537,6 +546,12 @@
 			}
 			if(!empty($where_like)){
 				$wheres[]=$where_like;
+			}
+			if(!empty($where_like_or)){
+				$wheres[]=$where_like_or;
+			}
+			if(!empty($where_not_like)){
+				$wheres[]=$where_not_like;
 			}
 			if(!empty($where_like_binary)){
 				$wheres[]=$where_like_binary;
@@ -565,11 +580,14 @@
 			else{
 				$where_equal_or=array();
 				foreach($this->where_equal_or as $k=>$v){
-					if(false!==strpos($k,'%s')){
-						$where_equal_or[]=sprintf($k,mysql_real_escape_string($v));
+					if(is_null($v)){
+						$where_equal_or[]=$k.' IS NULL';
+					}
+					elseif(is_int($k)){
+						$where_equal_or[]=$v;
 					}
 					else{
-						$where_equal_or[]=is_null($v)?$k.' IS NULL':sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
+						$where_equal_or[]=sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
 					}
 				}
 				return
@@ -590,11 +608,14 @@
 			else{
 				$where_equal_to=array();
 				foreach($this->where_equal_to as $k=>$v){
-					if(false!==strpos($k,'%s')){
-						$where_equal_to[]=sprintf($k,mysql_real_escape_string($v));
+					if(is_null($v)){
+						$where_equal_to[]=$k.' IS NULL';
+					}
+					elseif(is_int($k)){
+						$where_equal_to[]=$v;
 					}
 					else{
-						$where_equal_to[]=is_null($v)?$k.' IS NULL':sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
+						$where_equal_to[]=sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
 					}
 				}
 				return implode(' AND'."\n\t",$where_equal_to).' ';
@@ -647,14 +668,22 @@
 		private function _get_where_like(){
 			if(
 				!isset($this->where_like)||
-				!is_array($this->where_like)
+				!is_array($this->where_like)||
+				empty($this->where_like)
 				){
 				return '';
 			}
 			else{
 				$where_like=array();
 				foreach($this->where_like as $k=>$v){
-					$where_like[]=sprintf($k.' LIKE \'%%%s%%\'',mysql_real_escape_string($v));
+					if(is_array($v)){
+						foreach($v as $key=>$value){
+							$where_like[]=sprintf($k.' LIKE \'%%%s%%\'',mysql_real_escape_string($value));
+						}
+					}
+					else{
+						$where_like[]=sprintf($k.' LIKE \'%%%s%%\'',mysql_real_escape_string($v));
+					}
 				}
 				return implode(' AND'."\n\t",$where_like).' ';
 			}
@@ -674,6 +703,33 @@
 					}
 				}
 				return implode(' AND'."\n\t",$where_like_binary).' ';
+			}
+		}
+		private function _get_where_like_or(){
+			if(
+				!isset($this->where_like_or)||
+				!is_array($this->where_like_or)||
+				empty($this->where_like_or)
+				){
+				return '';
+			}
+			else{
+				$where_like_or=array();
+				foreach($this->where_like_or as $k=>$v){
+					if(is_array($v)){
+						foreach($v as $key=>$value){
+							$where_like_or[]=sprintf($k.' LIKE \'%%%s%%\'',mysql_real_escape_string($value));
+						}
+					}
+					else{
+						$where_like_or[]=sprintf($k.' LIKE \'%%%s%%\'',mysql_real_escape_string($v));
+					}
+				}
+				return
+					'('."\n".
+						"\t\t".implode(' OR'."\n\t\t",$where_like_or)."\n".
+						"\t".
+					') ';
 			}
 		}
 		private function _get_where_not_equal_to(){
@@ -698,8 +754,28 @@
 			// NOT IN Ensures the value is not in the list
 		}
 		private function _get_where_not_like(){
-			// FINISH
 			// NOT LIKE Used to compare strings
+			if(
+				!isset($this->where_not_like)||
+				!is_array($this->where_not_like)||
+				empty($this->where_not_like)
+				){
+				return '';
+			}
+			else{
+				$where_not_like=array();
+				foreach($this->where_not_like as $k=>$v){
+					if(is_array($v)){
+						foreach($v as $key=>$value){
+							$where_not_like[]=sprintf($k.' NOT LIKE \'%%%s%%\'',mysql_real_escape_string($value));
+						}
+					}
+					else{
+						$where_not_like[]=sprintf($k.' NOT LIKE \'%%%s%%\'',mysql_real_escape_string($v));
+					}
+				}
+				return implode(' AND'."\n\t",$where_not_like).' ';
+			}
 		}
 		private function _key_value($key,$value,$operator='='){
 			$value=(substr($value,0,1)=='!'?substr($value,1):'\''.$value.'\'');
