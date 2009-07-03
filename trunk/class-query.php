@@ -558,6 +558,7 @@
 			$wheres=array();
 			$where_greater_than=self::_get_where_greater_than();
 			$where_greater_than_or_equal_to=self::_get_where_greater_than_or_equal_to();
+			$where_less_than=self::_get_where_less_than();
 			$where_less_than_or_equal_to=self::_get_where_less_than_or_equal_to();
 			$where_equal_or=self::_get_where_equal_or();
 			$where_equal_to=self::_get_where_equal_to();
@@ -571,6 +572,9 @@
 			}
 			if(!empty($where_greater_than_or_equal_to)){
 				$wheres[]=$where_greater_than_or_equal_to;
+			}
+			if(!empty($where_less_than)){
+				$wheres[]=$where_less_than;
 			}
 			if(!empty($where_less_than_or_equal_to)){
 				$wheres[]=$where_less_than_or_equal_to;
@@ -628,7 +632,15 @@
 					}
 					elseif(is_array($v)){
 						foreach($v as $key=>$value){
-							$where_equal_or[]=sprintf($k.'=\'%s\'',mysql_real_escape_string($value));
+							if(is_null($value)){
+								$where_equal_or[]=$k.' IS NULL';
+							}
+							elseif(is_int($k)){
+								$where_equal_or[]=$value;
+							}
+							else{
+								$where_equal_or[]=sprintf($k.'=\'%s\'',mysql_real_escape_string($value));
+							}
 						}
 					}
 					else{
@@ -728,8 +740,31 @@
 			// IN Checks for values in a list
 		}
 		private function _get_where_less_than(){
-			// FINISH
 			// < Less than
+			if(
+				!isset($this->where_less_than)||
+				!is_array($this->where_less_than)
+				){
+				return '';
+			}
+			else{
+				$where_less_than=array();
+				foreach($this->where_less_than as $k=>$v){
+					if(is_null($v)){
+						$where_less_than[]=$k.' IS NULL';
+					}
+					elseif(is_int($k)){
+						$where_less_than[]=$v;
+					}
+					elseif(is_int($v)){
+						$where_less_than[]=sprintf($k.'<%s',mysql_real_escape_string($v));
+					}
+					else{
+						$where_less_than[]=sprintf($k.'<\'%s\'',mysql_real_escape_string($v));
+					}
+				}
+				return implode(' AND'."\n\t",$where_less_than).' ';
+			}
 		}
 		private function _get_where_less_than_or_equal_to(){
 			// <= Less than or equal to
@@ -742,7 +777,18 @@
 			else{
 				$where_less_than_or_equal_to=array();
 				foreach($this->where_less_than_or_equal_to as $k=>$v){
-					$where_less_than_or_equal_to[]=is_null($v)?$k.' IS NULL':self::_key_value($k,$v,'<=');
+					if(is_null($v)){
+						$where_less_than_or_equal_to[]=$k.' IS NULL';
+					}
+					elseif(is_int($k)){
+						$where_less_than_or_equal_to[]=$v;
+					}
+					elseif(is_int($v)){
+						$where_less_than_or_equal_to[]=sprintf($k.'<=%s',mysql_real_escape_string($v));
+					}
+					else{
+						$where_less_than_or_equal_to[]=sprintf($k.'<=\'%s\'',mysql_real_escape_string($v));
+					}
 				}
 				return implode(' AND'."\n\t",$where_less_than_or_equal_to).' ';
 			}
@@ -943,7 +989,7 @@
 		}
 		/* SHOW */
 		public function show(){
-			echo self::get();
+			echo '<pre>',self::get(),'</pre>';
 			return $this;
 		}
 		/* DISPLAY */
