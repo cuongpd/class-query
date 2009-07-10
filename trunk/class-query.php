@@ -396,6 +396,9 @@
 		private function _get_group_by(){
 			// GROUP BY Determines how the records should be grouped.
 			if(isset($this->group_by)){
+				if(is_array($this->group_by)){
+					$this->group_by=implode(','."\n\t",$this->group_by);
+				}
 				return
 					'GROUP BY'."\n".
 						"\t".$this->group_by."\n".
@@ -466,6 +469,9 @@
 				return '';
 			}
 			else{
+				if(is_array($this->order_by)){
+					$this->order_by=implode(','."\n\t",$this->order_by);
+				}
 				return
 					'ORDER BY'."\n".
 						"\t".$this->order_by."\n".
