@@ -76,7 +76,7 @@
 					}
 				}
 				else{
-					$insert_values[]=sprintf('\'%s\'',mysql_real_escape_string($v));
+					$insert_values[]=sprintf('\'%s\'',mysql_real_escape_string($value));
 				}
 			}
 			self::_set_keys($insert_keys);
