@@ -50,9 +50,9 @@
 				return self::_run_select();
 			}
 		}
-		public function insert($table,$keys_and_values,$on_duplicate_key_update=''){
+		public function insert($table,$keys_and_values,$on_duplicate_key_update='',$insert_options=''){
 			// insert_into() alias
-			return self::insert_into($table,$keys_and_values,$on_duplicate_key_update);
+			return self::insert_into($table,$keys_and_values,$on_duplicate_key_update,$insert_options);
 		}
 		public function insert_ignore($table,$keys_and_values,$on_duplicate_key_update=''){
 			return self::insert_into($table,$keys_and_values,$on_duplicate_key_update,'IGNORE');
@@ -330,8 +330,29 @@
 			$this->on_duplicate_key_update='';
 			if(''!==$on_duplicate_key_update&&is_array($on_duplicate_key_update)){
 				$update=array();
-				foreach($on_duplicate_key_update as $key=>$value){
-					$update[]=$key.'='.(!is_null($value)?sprintf('\'%s\'',mysql_real_escape_string($value)):'NULL');
+				foreach($on_duplicate_key_update as $k=>$v){
+					if(is_null($v)){
+						$update[]=$k.'=NULL';
+					}
+					elseif(is_int($k)){
+						$update[]=$v;
+					}
+					elseif(is_array($v)){
+						foreach($v as $key=>$value){
+							if(is_null($value)){
+								$update[]=$k.'=NULL';
+							}
+							elseif(is_int($k)){
+								$update[]=$value;
+							}
+							else{
+								$update[]=sprintf($k.'=\'%s\'',mysql_real_escape_string($value));
+							}
+						}
+					}
+					else{
+						$update[]=sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
+					}
 				}
 				$this->on_duplicate_key_update=
 					'ON DUPLICATE KEY UPDATE '."\n".
@@ -482,13 +503,7 @@
 			$this->results=mysql_num_rows($this->result);
 		}
 		private function _get_select(){
-			if(!is_array($this->select)){
-				return
-					'SELECT'."\n".
-						"\t".'*'."\n".
-						'';
-			}
-			else{
+			if(is_array($this->select)){
 				$selects=array();
 				foreach($this->select as $k=>$v){
 					if(false!==strpos($k,'%s')){
@@ -501,6 +516,18 @@
 				return
 					'SELECT'."\n".
 						"\t".implode(','."\n\t",$selects)."\n".
+						'';
+			}
+			elseif(empty($this->select)){
+				return
+					'SELECT'."\n".
+						"\t".'*'."\n".
+						'';
+			}
+			else{
+				return
+					'SELECT'."\n".
+						"\t".$this->select."\n".
 						'';
 			}
 		}
