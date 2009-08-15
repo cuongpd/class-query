@@ -39,6 +39,7 @@
 							array(
 								'`id`'=>$this->inserted
 							);
+						$limit=isset($limit)?$limit:1;
 						self::limit($limit);
 						break;
 				}
@@ -558,6 +559,9 @@
 				elseif(is_int($k)){
 					$set_equals[]=$v;
 				}
+				elseif(is_int($v)){
+					$set_equals[]=sprintf($k.'=%s',mysql_real_escape_string($v));
+				}
 				else{
 					$set_equals[]=sprintf($k.'=\'%s\'',mysql_real_escape_string($v));
 				}
@@ -963,6 +967,9 @@
 						else{
 							// with pagination
 							if(self::$function()){
+								// for pagination:
+								$this->perpage=$this->limit; // for get_perpage()
+								$this->total=$this->results; // for get_total()
 								// calculate pages
 								$this->pages=(int)ceil($this->results/$this->limit);
 								// set offset
@@ -1029,6 +1036,19 @@
 		public function display(){
 			// show() alias
 			return self::show();
+		}
+		/* PAGINATION */
+		public function get_page(){
+			return $this->page;
+		}
+		public function get_pages(){
+			return $this->pages;
+		}
+		public function get_perpage(){
+			return $this->perpage;
+		}
+		public function get_total(){
+			return $this->total;
 		}
 	}
 ?>
