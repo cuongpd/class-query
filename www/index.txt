@@ -55,7 +55,7 @@ if($q){
 	$user=$q->get_selected();
 	echo
 		'Hello '.$user['name'].',<br />'.
-		'Your email is currently set to '.$user[email'].' '.
+		'Your email is currently set to '.$user['email'].' '.
 		'and your user id is '.$user['user_id'].'.<br />'.
 		'';
 }
@@ -296,7 +296,7 @@ else{
 <br />
 =Usage=
 ==Quick Install==
-  # Download class-query from http://code.google.com/p/class-query/downloads/list
+  # Download class-query from http://class-query.googlecode.com/svn/trunk/class-query.php
   # include 'class-query.php';
   # See [http://code.google.com/p/class-query/source/browse/#svn/www/Examples examples] for usage.
 ==Example==
@@ -327,7 +327,7 @@ if($q){
 	$user=$q->get_selected();
 	echo
 		'Hello '.$user['name'].',<br />'.
-		'Your email is currently set to '.$user[email'].' '.
+		'Your email is currently set to '.$user['email'].' '.
 		'and your user id is '.$user['user_id'].'.<br />'.
 		'';
 }
