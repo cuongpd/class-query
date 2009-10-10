@@ -23,7 +23,7 @@
 		}
 		public function get_inserted_id($select = ''){
 			$this->inserted = mysql_insert_id();
-			if('' == $select&&'insert_multiple'!=$this->query_type){
+			if('' == $select && 'insert_multiple'!=$this->query_type){
 				return $this->inserted;
 			}
 			else{
@@ -162,10 +162,10 @@
 		}
 		public function get_selected(){
 			// returns an array of the SELECT result(s)
-			if(isset($this->limit)&&1==$this->limit){
+			if(isset($this->limit) && 1==$this->limit){
 				// for use when selecting with limit(1)
 				$result = array();
-				while($this->result&&$result[] = mysql_fetch_assoc($this->result)){}
+				while($this->result && $result[] = mysql_fetch_assoc($this->result)){}
 				array_pop($result);
 				$results = array();
 				foreach($result as $values){
@@ -175,7 +175,7 @@
 			else{
 				// for use when selecting with no limit or a limit > 1
 				$results = array();
-				while($this->result&&$results[] = mysql_fetch_assoc($this->result)){}
+				while($this->result && $results[] = mysql_fetch_assoc($this->result)){}
 				array_pop($results);
 			}
 			return $results;
@@ -263,7 +263,7 @@
 			$this->page = (int)$page;
 			return $this;
 		}
-		public function range($limit,$offset){
+		public function range($limit, $offset){
 			// alias instead of using both limit() && offset()
 			self::limit($limit);
 			self::offset($offset);
@@ -331,7 +331,7 @@
 		}
 		private function _on_duplicate_key_update($on_duplicate_key_update){
 			$this->on_duplicate_key_update = '';
-			if(''!==$on_duplicate_key_update&&is_array($on_duplicate_key_update)){
+			if(''!==$on_duplicate_key_update && is_array($on_duplicate_key_update)){
 				$update = array();
 				foreach($on_duplicate_key_update as $k=>$v){
 					if(is_null($v)){
@@ -363,7 +363,7 @@
 			}
 		}
 		/* GET */
-		public function get(){
+		public function get($use_limit = false){
 			// returns select, insert or update query
 			if(self::_get_delete_query()){
 				return $this->delete_query;
@@ -371,7 +371,7 @@
 			elseif(self::_get_insert_query()){
 				return $this->insert_query;
 			}
-			elseif(self::_get_select_query()){
+			elseif(self::_get_select_query($use_limit)){
 				return $this->select_query;
 			}
 			elseif(self::_get_update_query()){
@@ -478,7 +478,7 @@
 				if(isset($this->offset)){
 					return
 						'LIMIT'."\n".
-							"\t".$this->offset.','.$this->limit."\n".
+							"\t".$this->offset.', '.$this->limit."\n".
 							'';
 				}
 				return
@@ -545,7 +545,7 @@
 					self::_get_group_by().
 					self::_get_having().
 					self::_get_order_by().
-					($use_limit || !isset($this->page) ? self::_get_limit() : '').
+					($use_limit || (!isset($this->page) && !isset($this->offset)) ? self::_get_limit() : '').
 					'';
 				return true;
 			}
@@ -597,6 +597,7 @@
 			$wheres = array();
 			$where_greater_than = self::_get_where_greater_than();
 			$where_greater_than_or_equal_to = self::_get_where_greater_than_or_equal_to();
+			$where_in = self::_get_where_in();
 			$where_less_than = self::_get_where_less_than();
 			$where_less_than_or_equal_to = self::_get_where_less_than_or_equal_to();
 			$where_equal_or = self::_get_where_equal_or();
@@ -608,6 +609,9 @@
 			$where_like_binary = self::_get_where_like_binary();
 			if(!empty($where_greater_than)){
 				$wheres[] = $where_greater_than;
+			}
+			if(!empty($where_in)){
+				$wheres[] = $where_in;
 			}
 			if(!empty($where_greater_than_or_equal_to)){
 				$wheres[] = $where_greater_than_or_equal_to;
@@ -656,7 +660,8 @@
 		private function _get_where_equal_or(){
 			if(
 				!isset($this->where_equal_or)||
-				!is_array($this->where_equal_or)
+				!is_array($this->where_equal_or)||
+				empty($this->where_equal_or)
 				){
 				return '';
 			}
@@ -725,7 +730,8 @@
 			// > greater than
 			if(
 				!isset($this->where_greater_than)||
-				!is_array($this->where_greater_than)
+				!is_array($this->where_greater_than)||
+				empty($this->where_greater_than)
 				){
 				return '';
 			}
@@ -752,7 +758,8 @@
 			// >= greater than or equal to
 			if(
 				!isset($this->where_greater_than_or_equal_to)||
-				!is_array($this->where_greater_than_or_equal_to)
+				!is_array($this->where_greater_than_or_equal_to)||
+				empty($this->where_greater_than_or_equal_to)
 				){
 				return '';
 			}
@@ -776,14 +783,39 @@
 			}
 		}
 		private function _get_where_in(){
-			// FINISH
 			// IN Checks for values in a list
+			if(
+				!isset($this->where_in)||
+				!is_array($this->where_in)||
+				empty($this->where_in)
+				){
+				return '';
+			}
+			else{
+				$where_in = array();
+				foreach($this->where_in as $k=>$v){
+					if(is_null($v)){
+						$where_in[] = $k.' IS NULL';
+					}
+					elseif(is_int($k)){
+						$where_in[] = $v;
+					}
+					elseif(is_int($v)){
+						$where_in[] = sprintf($k.' IN(%s)',mysql_real_escape_string($v));
+					}
+					else{
+						$where_in[] = sprintf($k.' IN(%s)',mysql_real_escape_string($v));
+					}
+				}
+				return implode(' AND'."\n\t",$where_in).' ';
+			}
 		}
 		private function _get_where_less_than(){
 			// < Less than
 			if(
 				!isset($this->where_less_than)||
-				!is_array($this->where_less_than)
+				!is_array($this->where_less_than)||
+				empty($this->where_less_than)
 				){
 				return '';
 			}
@@ -810,7 +842,8 @@
 			// <= Less than or equal to
 			if(
 				!isset($this->where_less_than_or_equal_to)||
-				!is_array($this->where_less_than_or_equal_to)
+				!is_array($this->where_less_than_or_equal_to)||
+				empty($this->where_less_than_or_equal_to)
 				){
 				return '';
 			}
@@ -859,7 +892,8 @@
 		private function _get_where_like_binary(){
 			if(
 				!isset($this->where_like_binary)||
-				!is_array($this->where_like_binary)
+				!is_array($this->where_like_binary)||
+				empty($this->where_like_binary)
 				){
 				return '';
 			}
@@ -905,7 +939,8 @@
 			// != Not equal to
 			if(
 				!isset($this->where_not_equal_to)||
-				!is_array($this->where_not_equal_to)
+				!is_array($this->where_not_equal_to)||
+				empty($this->where_not_equal_to)
 				){
 				return '';
 			}
@@ -963,7 +998,7 @@
 						return self::$function();
 						break;
 					case 'select':
-						if(!isset($this->page)){
+						if(!(isset($this->page)||isset($this->offset))){
 							// no pagination
 							return self::$function();
 						}
@@ -974,9 +1009,21 @@
 								$this->perpage = $this->limit; // for get_perpage()
 								$this->total = $this->results; // for get_total()
 								// calculate pages
-								$this->pages = (int)ceil($this->results/$this->limit);
+								$this->pages = (int)ceil($this->results / $this->limit);
 								// set offset
-								self::offset(($this->page*$this->limit)-$this->limit);
+								if(!isset($this->offset)){
+									self::offset(($this->page * $this->limit) - $this->limit);
+								}
+								else{
+									// calculate page using offset and perpage
+									// determine on what page the offset would be on
+									for($page = 1; $page <= $this->pages; $page++){
+										if($this->offset - 1 < $page * $this->perpage){
+											$this->page = $page;
+											break;
+										}
+									}
+								}
 								// update select query with limit now that pages is set
 								self::_get_select_query(true);
 								// run select query with updated limit and offset
@@ -1010,9 +1057,8 @@
 			return self::_run_query($this->update_query);
 		}
 		private function _run_query($query){
-			// $debug = false;
-			$debug = true;
-			$this->result = mysql_query($query) or die('Error in query'.($debug?': '.mysql_error():'.'));
+			$debug = defined('DEBUG') && DEBUG === true;
+			$this->result = mysql_query($query) or die('Error in query'.($debug ? ': '.mysql_error() : '.'));
 			switch($this->query_type){
 				case 'delete':
 					return self::get_affected();
@@ -1022,7 +1068,7 @@
 					return true;
 				case 'select':
 					self::_get_results();
-					if($this->result&&$this->results>0){
+					if($this->result && $this->results > 0){
 						return $this->result;
 					}
 					return false;
@@ -1032,7 +1078,7 @@
 		}
 		/* SHOW */
 		public function show(){
-			echo '<pre>',self::get(),'</pre>';
+			echo '<pre>',self::get(true),'</pre>';
 			return $this;
 		}
 		/* DISPLAY */
