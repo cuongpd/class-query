@@ -1,44 +1,58 @@
 <?php
+require 'connect.php';
 require 'class-query.php';
 
-// Find the user_id, name and email for all users from the `user` table
-$q=new Query;
+header('Content-Type: text/plain');
+
+// Get users from `user`
+$q = new Query;
 $q
     ->select(
         array(
-            '`user`.`user_id`',
+            '`user`.`id`',
             '`user`.`name`',
-            '`user`.`email`'
+            '`user`.`email`',
         )
     )
     ->from('`user`')
-    ->order_by('`user`.`name` ASC')
-    ->limit(3)
+    ->order_by(
+        array(
+            '`user`.`email` ASC',
+            '`user`.`name` ASC',
+        )
+    )
+    ->limit(10)
     ->run();
-    // ->show();
-/* -> 
-    SELECT
-        `user`.`user_id`,
-        `user`.`name`,
-        `user`.`email`
-    FROM
-        `user`
-    ORDER BY
-        `user`.`name` ASC
-    LIMIT
-        3
-*/
-if($q){
-    $users=$q->get_selected();
-    foreach($users as $user){
+    
+$result = $q->run();
+$count = $q->get_selected_count();
+
+if (!($result && $count > 0)) {
+    echo 'No users found.' . "\n";
+}
+else {
+    while ($result && list($user['id'], $user['name'], $user['email']) = mysql_fetch_row($result)) {
         echo
-            'Name:'.$user['name'].'<br />'.
-            'Email:'.$user['email'].'<br />'.
-            'User Id:'.$user['user_id'].'.<br />'.
-            '-----<br />'.
+            'Id: ' . $user['id'] . "\n" .
+            'Name: ' . $user['name'] . "\n" .
+            'Email: ' . $user['email'] . "\n" .
+            "\n" .
             '';
     }
 }
-else{
-    echo 'Sorry, no users found.';
-}
+
+$q->show();
+
+/*
+SELECT
+    `user`.`id`,
+    `user`.`name`,
+    `user`.`email`
+FROM
+    `user`
+ORDER BY
+    `user`.`email` ASC,
+    `user`.`name` ASC
+LIMIT
+    10
+*/

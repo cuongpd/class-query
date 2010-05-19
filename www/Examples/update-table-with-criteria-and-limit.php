@@ -1,38 +1,45 @@
 <?php
-    require 'class-query.php';
+require 'connect.php';
+require 'class-query.php';
 
-// Update row values in the `user` table
-$q=new Query;
+header('Content-Type: text/plain');
+
+// Update user's email
+$q = new Query;
 $q
     ->update('`user`')
     ->set(
         array(
-            '`user`.`name`'=>'new_user_name',
-            '`user`.`email`'=>'new_email@example.com'
+            '`user`.`name`' => 'new_user_name',
+            '`user`.`email`' => 'new_email@example.com',
         )
     )
     ->where_equal_to(
         array(
-            '`user`.`user_id`'=>123456
+            '`user`.`id`' => 1
         )
     )
-    ->limit(1)
-    ->run();
-    // ->show();
-/* -> 
-    UPDATE
-        `user`
-    SET
-        `user`.`name`='new_user_name', 
-        `user`.`email`='new_email@example.com'
-    WHERE
-        `user`.`user_id`='123456' 
-    LIMIT
-        1
+    ->limit(1);
+    
+$result = $q->run();
+
+if (!($result && $q->get_affected() > 0)) {
+    echo 'Sorry, could not update user.' . "\n";
+}
+else {
+    echo 'User updated.' . "\n";
+}
+
+$q->show();
+
+/*
+UPDATE
+    `user`
+SET
+    `user`.`name` = "new_user_name", 
+    `user`.`email` = "new_email@example.com"
+WHERE
+    `user`.`id` = 1 
+LIMIT
+    1
 */
-if($q){
-    echo 'User updated.';
-}
-else{
-    echo 'Sorry, could not update user.';
-}

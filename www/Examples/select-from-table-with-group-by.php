@@ -14,51 +14,41 @@ $q
         )
     )
     ->from('`invoice`')
+    ->where_equal_to(
+        array(
+            '`email`' => 'user@example.com',
+        )
+    )
     ->group_by(
         array(
             '`name`',
             '`company`',
-            '`email`'
-        )
-    )
-    ->where_like(
-        array(
-            '`email`' =>'user@example.com'
+            '`email`',
         )
     )
     ->order_by(
         array(
             '`name` ASC',
-            '`company` ASC'
+            '`company` ASC',
         )
     );
     
-$result = $q->run();
-$count = $q->get_selected_count();
-
-if (!($result && $count > 0)) {
-    
-}
-else {
-    while ($result && list() = mysql_fetch_row($result)) {
-        
-    }
-}
+$q->show();
 
 /*
-    SELECT
-        `name`,
-        `company`,
-        `email`
-    FROM
-        `invoice`
-    WHERE
-        `email` LIKE '%user@example.com%' 
-    GROUP BY
-        `name`,
-        `company`,
-        `email`
-    ORDER BY
-        `name` ASC,
-        `company` ASC
+SELECT
+    `name`,
+    `company`,
+    `email`
+FROM
+    `invoice`
+WHERE
+    `email` = "user@example.com" 
+GROUP BY
+    `name`,
+    `company`,
+    `email`
+ORDER BY
+    `name` ASC,
+    `company` ASC
 */
