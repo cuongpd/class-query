@@ -1,46 +1,58 @@
 <?php
+require 'connect.php';
 require 'class-query.php';
 
-// Find the user_id, name and email for the specified user from the `user` table
-$user_id=123456;
-$q=new Query;
+header('Content-Type: text/plain');
+
+// Select the specified user from `user`
+
+$id = 1;
+$q = new Query;
 $q
     ->select(
         array(
-            '`user`.`user_id`',
+            '`user`.`id`',
             '`user`.`name`',
-            '`user`.`email`'
+            '`user`.`email`',
         )
     )
     ->from('`user`')
     ->where_equal_to(
         array(
-            '`user_id`'=>$user_id
+            '`user`.`id`' => $id,
         )
     )
-    ->limit(1)
-    ->run();
-    // ->show();
-/* -> 
-    SELECT
-        `user`.`user_id`,
-        `user`.`name`,
-        `user`.`email`
-    FROM
-        `user`
-    WHERE
-        `user_id`='123456' 
-    LIMIT
-        1
-*/
-if($q){
-    $user=$q->get_selected();
+    ->limit(1);
+    
+$result = $q->run();
+$count = $q->get_selected_count();
+
+if (!($result && $count > 0)) {
+    echo 'User ' . $id . ' not found.' . "\n";
+}
+else {
+    list($user['id'], $user['name'], $user['email']) = mysql_fetch_row($result);
     echo
-        'Hello '.$user['name'].',<br />'.
-        'Your email is currently set to '.$user['email'].' '.
-        'and your user id is '.$user['user_id'].'.<br />'.
+        'Hello ' . $user['name'] . ', ' .
+        'Your email is currently set to ' . $user['email'] . ' ' .
+        'and your user id is ' . $user['id'] . '.' . "\n" .
         '';
+    
 }
-else{
-    echo 'Sorry, user '.$user_id.' not found.';
-}
+
+$q->show();
+
+/*
+Hello user1039877430, Your email is currently set to user1039877430@example.com and your user id is 1.
+
+SELECT
+    `user`.`id`,
+    `user`.`name`,
+    `user`.`email`
+FROM
+    `user`
+WHERE
+    `user`.`id` = 1 
+LIMIT
+    1
+*/

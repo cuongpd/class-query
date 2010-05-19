@@ -2,13 +2,13 @@
 require 'class-query.php';
 
 // Page 2 of the user_id, name and email for all users from the `user` table
-$q=new Query;
+$q = new Query;
 $q
     ->select(
         array(
             '`user`.`user_id`',
             '`user`.`name`',
-            '`user`.`email`'
+            '`user`.`email`',
         )
     )
     ->from('`user`')

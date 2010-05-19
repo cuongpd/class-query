@@ -1,16 +1,21 @@
 <?php
+require 'connect.php';
 require 'class-query.php';
 
+header('Content-Type: text/plain');
+
 // Basic select
-$q=new Query;
+$q = new Query;
 $q
     ->select()
     ->from('`user`')
     ->run();
-    // ->show();
-/* -> 
-    SELECT
-        *
-    FROM
-        `user`
+    
+$q->show();
+
+/*
+SELECT
+    *
+FROM
+    `user`
 */

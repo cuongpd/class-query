@@ -1,13 +1,16 @@
 <?php
-    require 'class-query.php';
+require 'connect.php';
+require 'class-query.php';
 
-$q=new Query;
-$result=$q
+header('Content-Type: text/plain');
+
+$q = new Query;
+$q
     ->select(
         array(
             '`name`',
             '`company`',
-            '`email`'
+            '`email`',
         )
     )
     ->from('`invoice`')
@@ -20,7 +23,7 @@ $result=$q
     )
     ->where_like(
         array(
-            '`email`'=>'user@example.com'
+            '`email`' =>'user@example.com'
         )
     )
     ->order_by(
@@ -28,12 +31,20 @@ $result=$q
             '`name` ASC',
             '`company` ASC'
         )
-    )
-/*
-    ->run();
-*/
-    ->show();
-    exit;
+    );
+    
+$result = $q->run();
+$count = $q->get_selected_count();
+
+if (!($result && $count > 0)) {
+    
+}
+else {
+    while ($result && list() = mysql_fetch_row($result)) {
+        
+    }
+}
+
 /*
     SELECT
         `name`,
