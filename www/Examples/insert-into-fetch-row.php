@@ -54,7 +54,7 @@ else {
         echo 'User not found.' . "\n";
     }
     else {
-        $user = $q->get_selected();
+        list($user['id'], $user['name'], $user['email']) = mysql_fetch_row($result);
         echo
             'Id: ' . $user['id'] . "\n" .
             'Name: ' . $user['name'] . "\n" .
