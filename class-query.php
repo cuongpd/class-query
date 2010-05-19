@@ -5,22 +5,27 @@ class Query {
         // delete_from() alias
         return self::delete_from($table);
     }
+    
     public function delete_from($table) {
         $this->delete_from = $table;
         return $this;
     }
+    
     public function get_deleted() {
         return self::get_affected();
     }
+    
     /* INSERT */
     public function get_insert_id($select = '') {
         // alias for get_inserted_id()
         return self::get_inserted_id($select);
     }
+    
     public function get_inserted($select = '') {
         // alias for get_inserted_id()
         return self::get_inserted_id($select);
     }
+    
     public function get_inserted_id($select = '') {
         $this->inserted = mysql_insert_id();
         if('' == $select && 'insert_multiple'!=$this->query_type) {
@@ -51,13 +56,16 @@ class Query {
             return self::_run_select();
         }
     }
+    
     public function insert($table,$keys_and_values,$on_duplicate_key_update = '',$insert_options = '') {
         // insert_into() alias
         return self::insert_into($table,$keys_and_values,$on_duplicate_key_update,$insert_options);
     }
+    
     public function insert_ignore($table,$keys_and_values,$on_duplicate_key_update = '') {
         return self::insert_into($table,$keys_and_values,$on_duplicate_key_update,'IGNORE');
     }
+    
     public function insert_into($table,$keys_and_values,$on_duplicate_key_update = '',$insert_options = '') {
         self::_set_table($table);
         self::_set_keys_and_values($keys_and_values);
@@ -94,11 +102,13 @@ class Query {
             '';
         return $this;
     }
+    
     /* INSERTS */
     public function inserts($table,$keys,$values) {
         // insert_multiple() alias
         return self::insert_multiple($table,$keys,$values);
     }
+    
     public function insert_multiple($table, $keys, $values, $on_duplicate_key_update = '') {
         self::_set_table($table);
         $insert_keys = $keys;
@@ -128,10 +138,12 @@ class Query {
             '';
         return $this;
     }
+    
     /* REPLACE */
     public function get_replaced() {
         return self::get_affected();
     }
+    
     public function replace($table,$keys_and_values) {
         $replace_keys = array();
         $replace_values = array();
@@ -149,17 +161,21 @@ class Query {
             '';
         return $this;
     }
+    
     public function replace_into($table,$keys_and_values) {
         return self::replace($table,$keys_and_values);
     }
+    
     /* SELECT */
     public function count() {
         // alias for get_selected_count()
         return self::get_selected_count();
     }
+    
     public function get_selected_count() {
         return $this->results;
     }
+    
     public function get_selected() {
         // returns an array of the SELECT result(s)
         if(isset($this->limit) && 1==$this->limit) {
@@ -180,25 +196,30 @@ class Query {
         }
         return $results;
     }
+    
     public function select($select = '*') {
         // SELECT Retrieves fields from one or more tables.
         $this->select = $select;
         return $this;
     }
+    
     public function select_from($select, $table) {
         // alias for select() instead of using both select() && from()
         self::select($select);
         self::from($table);
         return $this;
     }
+    
     /* UPDATE */
     public function get_updated() {
         return self::get_affected();
     }
+    
     public function set($set) {
         $this->set = $set;
         return $this;
     }
+    
     public function update($update,$set = array()) {
         $this->update = $update;
         if(!empty($set)) {
@@ -206,129 +227,160 @@ class Query {
         }
         return $this;
     }
+    
     /* Get helpers */
     private function _set_keys($keys) {
         $this->keys = $keys;
     }
+    
     private function _set_keys_and_values($keys_and_values) {
         $this->keys_and_values = $keys_and_values;
     }
+    
     private function _set_table($table) {
         $this->table = $table;
     }
+    
     private function _set_values($values) {
         $this->values = $values;
     }
+    
     /* Query helpers */
     public function distinct($distinct) {
         $this->distinct = $distinct;
         return $this;
     }
+    
     public function from($from) {
         // FROM target the specifed tables.
         $this->from = $from;
         return $this;
     }
+    
     public function get_affected() {
         // Returns number of affected rows by the last INSERT, UPDATE, REPLACE or DELETE
         return mysql_affected_rows();
     }
+    
     public function group_by($group_by) {
         $this->group_by = $group_by;
         return $this;
     }
+    
     public function having($having) {
         // HAVING Used with GROUP BY to specify the criteria for the grouped records.
         $this->having = $having;
         return $this;
     }
+    
     public function inner_join($inner_join) {
         $this->inner_join = $inner_join;
         return $this;
     }
+    
     public function limit($limit) {
         // LIMIT Limit the number of records selected or deleted.
         $this->limit = (int)$limit;
         return $this;
     }
+    
     public function offset($offset) {
         $this->offset = (int)$offset;
         return $this;
     }
+    
     public function order_by($order_by) {
         $this->order_by = $order_by;
         return $this;
     }
+    
     public function page($page) {
         $this->page = (int)$page;
         return $this;
     }
+    
     public function range($limit, $offset) {
         // alias instead of using both limit() && offset()
         self::limit($limit);
         self::offset($offset);
         return $this;
     }
+    
     public function where_between($where_between) {
         $this->where_between = $where_between;
         return $this;
     }
+    
     public function where_equal($where_equal) {
         // alias for where_equal_to()
         return self::where_equal_to($where_equal);
     }
+    
     public function where_equal_or($where_equal_or) {
         $this->where_equal_or = $where_equal_or;
         return $this;
     }
+    
     public function where_equal_to($where_equal_to) {
         $this->where_equal_to = $where_equal_to;
         return $this;
     }
+    
     public function where_greater_than($where_greater_than) {
         $this->where_greater_than = $where_greater_than;
         return $this;
     }
+    
     public function where_greater_than_or_equal_to($where_greater_than_or_equal_to) {
         $this->where_greater_than_or_equal_to = $where_greater_than_or_equal_to;
         return $this;
     }
+    
     public function where_in($where_in) {
         $this->where_in = $where_in;
         return $this;
     }
+    
     public function where_less_than($where_less_than) {
         $this->where_less_than = $where_less_than;
         return $this;
     }
+    
     public function where_less_than_or_equal_to($where_less_than_or_equal_to) {
         $this->where_less_than_or_equal_to = $where_less_than_or_equal_to;
         return $this;
     }
+    
     public function where_like($where_like) {
         $this->where_like = $where_like;
         return $this;
     }
+    
     public function where_like_binary($where_like_binary) {
         $this->where_like_binary = $where_like_binary;
         return $this;
     }
+    
     public function where_like_or($where_like_or) {
         $this->where_like_or = $where_like_or;
         return $this;
     }
+    
     public function where_not_equal_to($where_not_equal_to) {
         $this->where_not_equal_to = $where_not_equal_to;
         return $this;
     }
+    
     public function where_not_in($where_not_in) {
         $this->where_not_in = $where_not_in;
         return $this;
     }
+    
     public function where_not_like($where_not_like) {
         $this->where_not_like = $where_not_like;
         return $this;
     }
+    
     private function _on_duplicate_key_update($on_duplicate_key_update) {
         $this->on_duplicate_key_update = '';
         if(''!==$on_duplicate_key_update && is_array($on_duplicate_key_update)) {
@@ -362,6 +414,7 @@ class Query {
                     "\t".implode(','."\n\t",$update)."\n";
         }
     }
+    
     /* GET */
     public function get($use_limit = false) {
         // returns select, insert or update query
@@ -384,15 +437,18 @@ class Query {
             return false;
         }
     }
+    
     private function _get_distinct() {
         // FINISH
     }
+    
     private function _get_delete_from() {
         return
             'DELETE FROM'."\n".
                 "\t".$this->delete_from."\n".
                 '';
     }
+    
     private function _get_delete_query() {
         if(isset($this->delete_from)) {
             $this->query_type = 'delete';
@@ -406,6 +462,7 @@ class Query {
         }
         return false;
     }
+    
     private function _get_from() {
         if(isset($this->from)) {
             return
@@ -417,6 +474,7 @@ class Query {
             return '';
         }
     }
+    
     private function _get_group_by() {
         // GROUP BY Determines how the records should be grouped.
         if(isset($this->group_by)) {
@@ -429,6 +487,7 @@ class Query {
                     '';
         }
     }
+    
     private function _get_having() {
         if(isset($this->having)) {
             return
@@ -437,6 +496,7 @@ class Query {
                     '';
         }
     }
+    
     private function _get_inner_join() {
         if(isset($this->inner_join)) {
             return
@@ -445,6 +505,7 @@ class Query {
                     '';
         }
     }
+    
     private function _get_insert_query() {
         if(isset($this->insert_into)) {
             $this->query_type = 'insert_into';
@@ -458,6 +519,7 @@ class Query {
         }
         return false;
     }
+    
     private function _get_insert_multiple() {
         if(isset($this->insert_multiple)) {
             $this->query_type = 'insert_multiple';
@@ -466,10 +528,12 @@ class Query {
         }
         return false;
     }
+    
     private function _get_join() {
         // FINISH
         return self::_get_inner_join();
     }
+    
     private function _get_limit() {
         if(!isset($this->limit)) {
             return '';
@@ -487,6 +551,7 @@ class Query {
                     '';
         }
     }
+    
     private function _get_order_by() {
         // ORDER BY to order the records.
         if(!isset($this->order_by)) {
@@ -502,9 +567,11 @@ class Query {
                     '';
         }
     }
+    
     private function _get_results() {
         $this->results = mysql_num_rows($this->result);
     }
+    
     private function _get_select() {
         if(is_array($this->select)) {
             $selects = array();
@@ -534,6 +601,7 @@ class Query {
                     '';
         }
     }
+    
     private function _get_select_query($use_limit = null) {
         if(isset($this->select)) {
             $this->query_type = 'select';
@@ -551,6 +619,7 @@ class Query {
         }
         return false;
     }
+    
     private function _get_set() {
         $sets = array();
         $set_equals = array();
@@ -574,12 +643,14 @@ class Query {
                 "\t".implode(','."\n\t",$sets)."\n".
                 '';
     }
+    
     private function _get_update() {
         return
             'UPDATE'."\n".
                 "\t".$this->update."\n".
                 '';
     }
+    
     private function _get_update_query() {
         if(isset($this->update)) {
             $this->query_type = 'update';
@@ -593,6 +664,7 @@ class Query {
         }
         return false;
     }
+    
     private function _get_where() {
         $wheres = array();
         $where_greater_than = self::_get_where_greater_than();
@@ -653,10 +725,12 @@ class Query {
                     '';
         }
     }
+    
     private function _get_where_between() {
         // FINISH
         // BETWEEN Checks for values between a range
     }
+    
     private function _get_where_equal_or() {
         if(
             !isset($this->where_equal_or)||
@@ -698,6 +772,7 @@ class Query {
                 ') ';
         }
     }
+    
     private function _get_where_equal_to() {
         // = Equal to
         if(
@@ -726,6 +801,7 @@ class Query {
             return implode(' AND'."\n\t",$where_equal_to).' ';
         }
     }
+    
     private function _get_where_greater_than() {
         // > greater than
         if(
@@ -754,6 +830,7 @@ class Query {
             return implode(' AND'."\n\t",$where_greater_than).' ';
         }
     }
+    
     private function _get_where_greater_than_or_equal_to() {
         // >= greater than or equal to
         if(
@@ -782,6 +859,7 @@ class Query {
             return implode(' AND'."\n\t",$where_greater_than_or_equal_to).' ';
         }
     }
+    
     private function _get_where_in() {
         // IN Checks for values in a list
         if(
@@ -810,6 +888,7 @@ class Query {
             return implode(' AND'."\n\t",$where_in).' ';
         }
     }
+    
     private function _get_where_less_than() {
         // < Less than
         if(
@@ -838,6 +917,7 @@ class Query {
             return implode(' AND'."\n\t",$where_less_than).' ';
         }
     }
+    
     private function _get_where_less_than_or_equal_to() {
         // <= Less than or equal to
         if(
@@ -866,6 +946,7 @@ class Query {
             return implode(' AND'."\n\t",$where_less_than_or_equal_to).' ';
         }
     }
+    
     private function _get_where_like() {
         if(
             !isset($this->where_like)||
@@ -889,6 +970,7 @@ class Query {
             return implode(' AND'."\n\t",$where_like).' ';
         }
     }
+    
     private function _get_where_like_binary() {
         if(
             !isset($this->where_like_binary)||
@@ -907,6 +989,7 @@ class Query {
             return implode(' AND'."\n\t",$where_like_binary).' ';
         }
     }
+    
     private function _get_where_like_or() {
         if(
             !isset($this->where_like_or)||
@@ -934,6 +1017,7 @@ class Query {
                 ') ';
         }
     }
+    
     private function _get_where_not_equal_to() {
         // <> Not equal to
         // != Not equal to
@@ -952,10 +1036,12 @@ class Query {
             return implode(' AND'."\n\t",$where_not_equal_to).' ';
         }
     }
+    
     private function _get_where_not_in() {
         // FINISH
         // NOT IN Ensures the value is not in the list
     }
+    
     private function _get_where_not_like() {
         // NOT LIKE Used to compare strings
         if(
@@ -980,10 +1066,12 @@ class Query {
             return implode(' AND'."\n\t",$where_not_like).' ';
         }
     }
+    
     private function _key_value($key,$value,$operator = '=') {
         $value = (substr($value,0,1)=='!'?substr($value,1):'\''.$value.'\'');
         return sprintf($key.$operator.'%s',mysql_real_escape_string($value));
     }
+    
     /* RUN */
     public function run() {
         // runs query, returns mysql result
@@ -1038,24 +1126,31 @@ class Query {
         }
         return false;
     }
+    
     private function _run_delete() {
         return self::_run_query($this->delete_query);
     }
+    
     private function _run_insert_ignore_into() {
         return self::_run_query($this->insert_query);
     }
+    
     private function _run_insert_into() {
         return self::_run_query($this->insert_query);
     }
+    
     private function _run_insert_multiple() {
         return self::_run_query($this->insert_multiple_query);
     }
+    
     private function _run_select() {
         return self::_run_query($this->select_query);
     }
+    
     private function _run_update() {
         return self::_run_query($this->update_query);
     }
+    
     private function _run_query($query) {
         $debug = defined('DEBUG') && DEBUG === true;
         $this->result = mysql_query($query) or die('Error in query'.($debug ? ': '.mysql_error() : '.'));
@@ -1076,26 +1171,32 @@ class Query {
                 return self::get_affected();
         }
     }
+    
     /* SHOW */
     public function show() {
         echo '<pre>',self::get(true),'</pre>';
         return $this;
     }
+    
     /* DISPLAY */
     public function display() {
         // show() alias
         return self::show();
     }
+    
     /* PAGINATION */
     public function get_page() {
         return $this->page;
     }
+    
     public function get_pages() {
         return $this->pages;
     }
+    
     public function get_perpage() {
         return $this->perpage;
     }
+    
     public function get_total() {
         return $this->total;
     }
