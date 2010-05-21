@@ -2,7 +2,6 @@
 class Query {
     public function __construct() {
         $this->debug = defined('DEBUG') && DEBUG === true;
-        $this->error_log = defined('ERROR_LOG') ? ERROR_LOG : false;
         $this->having = '';
     }
     
@@ -1382,16 +1381,17 @@ class Query {
         $this->result = mysql_query($query);
         
         if (!$this->result) {
+            $this->mysql_error = mysql_error();
             
             if ($this->debug) {
-                $this->error = 'Error in query: ' . mysql_error();
-                
-                if (!($this->error_log === false)) {
-                    error_log('[' . date('d-M-Y H:i:s') . '] ' . $this->error . "\n", 3, $this->error_log);
-                }
+                $this->error = 'Error in query: ' . $this->mysql_error;
             }
             else {
                 $this->error = 'Error in query.';
+            }
+            
+            if (function_exists('error')) {
+                error($this->error);
             }
             
             die($this->error);
